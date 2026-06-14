@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+#
+# Decision-log nudge: a NON-BLOCKING reminder.
+# If you've made several commits without touching docs/DECISIONS.md, it prints
+# a gentle reminder. It never blocks your commit.
+#
+# Tune how many commits trigger the reminder:
+THRESHOLD=5
+
+LOG="docs/DECISIONS.md"
+
+# If you're logging a decision in this very commit, stay quiet.
+if git diff --cached --name-only | grep -qx "$LOG"; then
+  exit 0
+fi
+
+# If the log doesn't exist yet, nudge once to create it.
+if [ ! -f "$LOG" ]; then
+  echo "💡 No $LOG found. Run the installer or create one to start logging decisions." >&2
+  exit 0
+fi
+
+# Find the last commit that touched the log; count commits since.
+last=$(git log -1 --format=%H -- "$LOG" 2>/dev/null)
+if [ -z "$last" ]; then
+  # Tracked but never committed in history yet — no nudge needed.
+  exit 0
+fi
+
+count=$(git rev-list --count "${last}..HEAD" 2>/dev/null || echo 0)
+
+if [ "$count" -ge "$THRESHOLD" ]; then
+  echo "💡 $count commits since $LOG last changed." >&2
+  echo "   Made any decisions worth recording? Run /log-decision in Claude Code." >&2
+fi
+
+exit 0

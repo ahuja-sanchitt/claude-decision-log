@@ -1,0 +1,7 @@
+# Normalize line endings across contributors' machines.
+* text=auto
+
+# Shell scripts and git hooks MUST use LF, or they fail on macOS/Linux with
+# errors like: "/usr/bin/env: bash\r: No such file or directory"
+*.sh     text eol=lf
+hooks/*  text eol=lf
