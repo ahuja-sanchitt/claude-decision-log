@@ -21,19 +21,64 @@ automatically, the moment each decision is made.
 
 ## Install
 
+There are two folders involved: **this tool** (which you clone once) and **your
+project** (where the logging actually goes). You install *from* the tool folder
+*into* your project.
+
+**Step 1 — Clone this tool once.** Put it anywhere; your Desktop is fine:
+
 ```bash
 git clone https://github.com/ahuja-sanchitt/claude-decision-log.git
-cd /path/to/your-project
-/path/to/claude-decision-log/install.sh         
-/path/to/claude-decision-log/install.sh --with-hook
 ```
 
-Then **restart Claude Code** in your project (commands and `CLAUDE.md` load at
-session start). Run `/help` to confirm `log-decision` and `decisions` appear.
+**Step 2 — Go into the project you want logging in:**
 
-> Prefer to do it by hand? Copy `templates/DECISIONS.md` to `docs/`, copy the
-> two files in `commands/` to `.claude/commands/`, and paste
-> `templates/CLAUDE-decision-logging.md` into your `CLAUDE.md`.
+```bash
+cd ~/Desktop/my-project
+```
+
+**Step 3 — Run the installer from there** (the `--with-hook` flag also adds the
+optional commit reminder):
+
+```bash
+~/Desktop/claude-decision-log/install.sh --with-hook
+```
+
+That's it for the install. The script tells you exactly what it created.
+
+**Step 4 — Restart Claude Code** in your project so it loads the new commands
+and `CLAUDE.md`. Run `/help` and confirm `log-decision` and `decisions` appear.
+
+### Worked example
+
+Tool cloned to `~/Desktop/claude-decision-log`, project at `~/Desktop/my-project`:
+
+```bash
+cd ~/Desktop/my-project
+~/Desktop/claude-decision-log/install.sh --with-hook
+```
+
+To add it to a *second* project later, you don't re-clone — just run the same
+installer from inside that other project:
+
+```bash
+cd ~/Desktop/another-project
+~/Desktop/claude-decision-log/install.sh --with-hook
+```
+
+### Windows
+
+Run the steps above in **Git Bash** (ships with Git for Windows), not
+PowerShell — PowerShell can't execute `.sh` files. In Git Bash, `~/Desktop/...`
+works just like on macOS/Linux. If you'd rather not use Git Bash, see manual
+install below.
+
+### Manual install (no script)
+
+Copy `templates/DECISIONS.md` into your project's `docs/` folder, copy both
+files from `commands/` into your project's `.claude/commands/` folder, and paste
+the contents of `templates/CLAUDE-decision-logging.md` into your project's
+`CLAUDE.md` (create one if it doesn't exist).
 
 ## How it works
 
