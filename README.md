@@ -11,13 +11,17 @@ automatically, the moment each decision is made.
 
 ## What you get
 
-- **`docs/DECISIONS.md`** — an append-only decision log living in your repo.
+- **Per-app decision logs** — each app (package) keeps its own append-only
+  `<app>/DECISIONS.md` right next to its code, plus a top-level
+  `docs/DECISIONS.md` for project-wide / cross-cutting choices. One giant file
+  never builds up.
 - **Automatic logging** — a directive in `CLAUDE.md` so Claude records each
-  decision (with tradeoffs) as it happens.
+  decision (with tradeoffs) in the right app's log as it happens.
 - **`/log-decision`** — a slash command to manually log or backfill one.
-- **`/decisions`** — a slash command that prints a clean summary of the log.
-- **Optional pre-commit nudge** — reminds you if you've gone several commits
-  without recording anything. Never blocks your commit.
+- **`/decisions`** — a slash command that summarises the logs (all apps, or
+  one).
+- **Optional pre-commit nudge** — reminds you if you changed an app without
+  recording a decision for it. Never blocks your commit.
 
 ## Install
 
@@ -83,29 +87,53 @@ the contents of `templates/CLAUDE-decision-logging.md` into your project's
 ## How it works
 
 Claude Code reads `CLAUDE.md` and `.claude/commands/` at the start of every
-session. The directive tells it to append to `docs/DECISIONS.md` whenever a
+session. The directive tells it to append a decision to the right log whenever a
 non-trivial decision is settled. Note this is *guidance*, not enforced
 configuration — it catches the large majority of decisions, and `/log-decision`
 is there to backfill anything that slips through.
+
+## Per-app logs
+
+Decisions live next to the code they affect. A choice about a single app is
+logged in that app's own `<app>/DECISIONS.md`; a choice that spans apps or is
+project-wide (database, auth, settings, shared dependencies) goes in the
+top-level `docs/DECISIONS.md`.
+
+Each file numbers its entries independently with its own prefix — the app name
+uppercased for a per-app log, `GEN` for the project-wide one:
+
+```
+ticket/DECISIONS.md     → TICKET-001, TICKET-002, …
+customer/DECISIONS.md   → CUSTOMER-001, …
+docs/DECISIONS.md        → GEN-001, …   (cross-cutting)
+```
+
+Only `docs/DECISIONS.md` is created at install time. An app's log is created
+automatically the first time a decision in that app gets recorded, so apps you
+add later need no extra setup.
+
+> **Note:** in long auto-accept runs Claude settles many choices without a pause,
+> so some may not be logged in the moment — use `/log-decision` to backfill.
 
 ## Commands
 
 | Command | What it does |
 | --- | --- |
-| `/log-decision [note]` | Logs the latest (or described) decision with its tradeoffs. |
-| `/decisions [keyword]` | Prints a summary / table of contents of the log. |
+| `/log-decision [note]` | Logs the latest (or described) decision, with its tradeoffs, in the right app's log. |
+| `/decisions [app or keyword]` | Summarises the logs — all apps, one app, or filtered by keyword. |
 
 ## The append-only rule
 
 Entries are never edited or deleted. When you reverse a past decision, a **new**
-entry is added and the old one is marked `Superseded by D-0XX`. That way the log
+entry is added and the old one is marked `Superseded by <PREFIX>-0XX` (e.g.
+`Superseded by TICKET-014`). That way the log
 shows not just what you're doing now, but what you used to do and why you
 changed — which is exactly the trail you want months later (or in an interview).
 
 ## Example entry
 
 ```markdown
-## D-003 — Reranking model for retrieval
+## TICKET-003 — Reranking model for retrieval
 
 - **Date:** 2026-06-14
 - **Phase / area:** Phase 3 — retrieval quality
