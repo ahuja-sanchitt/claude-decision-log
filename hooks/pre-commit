@@ -1,37 +1,59 @@
 #!/usr/bin/env bash
 #
-# Decision-log nudge: a NON-BLOCKING reminder.
-# If you've made several commits without touching docs/DECISIONS.md, it prints
-# a gentle reminder. It never blocks your commit.
+# Decision-log nudge: a NON-BLOCKING reminder, per app.
 #
-# Tune how many commits trigger the reminder:
+# For each app that has its own DECISIONS.md, if this commit changes files in
+# that app but doesn't touch the app's log, it prints a gentle reminder. It also
+# nudges for the top-level docs/DECISIONS.md after several quiet commits. It
+# never blocks your commit.
+#
+set -u
+
+# How many commits without touching the project-wide log triggers its reminder:
 THRESHOLD=5
+GENERAL="docs/DECISIONS.md"
 
-LOG="docs/DECISIONS.md"
+staged="$(git diff --cached --name-only)"
 
-# If you're logging a decision in this very commit, stay quiet.
-if git diff --cached --name-only | grep -qx "$LOG"; then
+# Nothing staged — stay quiet.
+[ -z "$staged" ] && exit 0
+
+# --- Per-app, change-aware nudges -------------------------------------------
+# Walk every co-located app log (any tracked DECISIONS.md except the top-level
+# one). If this commit changed that app's files but not its log, nudge.
+while IFS= read -r log; do
+  [ -z "$log" ] && continue
+  [ "$log" = "$GENERAL" ] && continue
+  app_dir="$(dirname "$log")"
+
+  if echo "$staged" | grep -qE "^${app_dir}/"; then
+    if ! echo "$staged" | grep -qx "$log"; then
+      echo "💡 You changed ${app_dir}/ but didn't touch ${log}." >&2
+      echo "   Made any decisions worth recording? Run /log-decision in Claude Code." >&2
+    fi
+  fi
+done < <(git ls-files '*DECISIONS.md')
+
+# --- Project-wide log: count-based nudge ------------------------------------
+# If you're logging a cross-cutting decision in this very commit, stay quiet.
+if echo "$staged" | grep -qx "$GENERAL"; then
   exit 0
 fi
 
-# If the log doesn't exist yet, nudge once to create it.
-if [ ! -f "$LOG" ]; then
-  echo "💡 No $LOG found. Run the installer or create one to start logging decisions." >&2
+# If the project-wide log doesn't exist yet, nudge once to create it.
+if [ ! -f "$GENERAL" ]; then
+  echo "💡 No $GENERAL found. Run the installer or create one to start logging decisions." >&2
   exit 0
 fi
 
-# Find the last commit that touched the log; count commits since.
-last=$(git log -1 --format=%H -- "$LOG" 2>/dev/null)
-if [ -z "$last" ]; then
-  # Tracked but never committed in history yet — no nudge needed.
-  exit 0
-fi
-
-count=$(git rev-list --count "${last}..HEAD" 2>/dev/null || echo 0)
-
-if [ "$count" -ge "$THRESHOLD" ]; then
-  echo "💡 $count commits since $LOG last changed." >&2
-  echo "   Made any decisions worth recording? Run /log-decision in Claude Code." >&2
+# Find the last commit that touched the project-wide log; count commits since.
+last="$(git log -1 --format=%H -- "$GENERAL" 2>/dev/null)"
+if [ -n "$last" ]; then
+  count="$(git rev-list --count "${last}..HEAD" 2>/dev/null || echo 0)"
+  if [ "$count" -ge "$THRESHOLD" ]; then
+    echo "💡 $count commits since $GENERAL last changed." >&2
+    echo "   Made any project-wide decisions worth recording? Run /log-decision in Claude Code." >&2
+  fi
 fi
 
 exit 0

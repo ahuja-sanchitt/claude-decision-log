@@ -24,8 +24,10 @@ if [ -f "$DEST/docs/DECISIONS.md" ]; then
   echo "  • docs/DECISIONS.md already exists — leaving it untouched."
 else
   cp "$SRC/templates/DECISIONS.md" "$DEST/docs/DECISIONS.md"
-  echo "  • Created docs/DECISIONS.md"
+  echo "  • Created docs/DECISIONS.md (project-wide / cross-cutting log)"
 fi
+echo "    Per-app logs (e.g. ticket/DECISIONS.md) are created automatically by"
+echo "    Claude the first time a decision in that app is logged."
 
 # 3. Slash commands
 cp "$SRC/commands/log-decision.md" "$DEST/.claude/commands/log-decision.md"
@@ -35,7 +37,7 @@ echo "  • Installed /log-decision and /decisions commands"
 # 4. The CLAUDE.md directive (append if missing, create if absent)
 DIRECTIVE="$SRC/templates/CLAUDE-decision-logging.md"
 if [ -f "$DEST/CLAUDE.md" ]; then
-  if grep -q "Decision logging (always on)" "$DEST/CLAUDE.md"; then
+  if grep -q "Decision logging (always on" "$DEST/CLAUDE.md"; then
     echo "  • CLAUDE.md already has the decision-logging directive — skipping."
   else
     printf '\n' >> "$DEST/CLAUDE.md"
@@ -68,3 +70,6 @@ echo "Done. Next steps:"
 echo "  1. Restart Claude Code (or open a fresh session) in this repo."
 echo "  2. Run /help — you should see 'log-decision' and 'decisions'."
 echo "  3. git add docs/DECISIONS.md .claude/commands CLAUDE.md && git commit -m 'Add decision logging'"
+echo ""
+echo "  Per-app logs appear as <app>/DECISIONS.md as you build — commit each"
+echo "  alongside that app's code."
